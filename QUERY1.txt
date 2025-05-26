@@ -1,0 +1,50 @@
+select 
+    A.CustomerId, 
+    C.CustomerName,  
+    count(distinct A.OrderId) as TotalNBOrders, 
+    count(DISTINCT A.InvoiceId) as TotalNBInvoices,
+    sum(A.UnitPrice * A.Quantity) as OrdersTotalValue,  
+    sum(A.UnitPriceI * A.QuantityI) as InvoicesTotalValue,
+    abs(sum(A.UnitPrice * A.Quantity) - sum(A.UnitPriceI * A.QuantityI)) as AbsoluteValueDifference
+from 
+(
+    select 
+        O.CustomerID, 
+        O.OrderId, 
+        null as InvoiceID, 
+        OL.UnitPrice, 
+        OL.Quantity, 
+        0 as UnitPriceI, 
+        0 as QuantityI
+    from 
+        Sales.Orders O
+    join 
+        Sales.OrderLines OL on O.OrderId = OL.OrderID
+    where 
+        exists (
+            select 1
+            from Sales.Invoices II
+            where II.OrderID = O.OrderID
+        )
+    union all
+    select 
+        I.CustomerID, 
+        null as OrderId, 
+        I.InvoiceID, 
+        0 as UnitPrice, 
+        0 as Quantity, 
+        IL.UnitPrice as UnitPriceI, 
+        IL.Quantity as QuantityI
+    from 
+        Sales.Invoices I
+    join 
+        Sales.InvoiceLines IL on I.InvoiceID = IL.InvoiceID
+) as A
+join 
+    Sales.Customers C on A.CustomerID = C.CustomerID
+group by 
+    A.CustomerID, 
+    C.CustomerName
+order by  
+    TotalNBOrders asc, 
+    CustomerName asc;

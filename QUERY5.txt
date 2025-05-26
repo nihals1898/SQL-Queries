@@ -1,0 +1,14 @@
+select
+
+C.CustomerId,
+C.CustomerName
+
+from dbo.Customer as C
+join dbo.Purchase as P 
+on C.CustomerId = P.CustomerId
+group by C.CustomerId,
+		 C.CustomerName
+having count(P.ProductId) = ( select count(*) 
+			      from dbo.Product )
+		              and sum(P.Qty) > 50 
+

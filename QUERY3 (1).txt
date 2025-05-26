@@ -1,0 +1,4 @@
+EXEC dbo.ReportCustomerTurnover
+
+@Choice = 1,
+@Year = 2013;

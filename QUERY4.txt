@@ -1,0 +1,43 @@
+with CustomerLosses as (
+
+    select 
+        C.CustomerID,
+        C.CustomerName,
+        CC.CustomerCategoryName,
+        sum(ol.Quantity * ol.UnitPrice) - coalesce(sum(il.Quantity * il.UnitPrice), 0) as Loss
+    from 
+        Sales.Customers as C
+    join 
+        Sales.CustomerCategories as CC on C.CustomerCategoryID = CC.CustomerCategoryID
+    left join 
+        Sales.Orders as O on C.CustomerID = O.CustomerID
+    left join
+        Sales.OrderLines as OL on O.OrderID = OL.OrderID
+    left join 
+        Sales.Invoices as I on O.OrderID = I.OrderID
+    left join 
+        Sales.InvoiceLines as IL on I.InvoiceID = IL.InvoiceID and OL.StockItemID = IL.StockItemID
+    group by 
+        C.CustomerID, C.CustomerName, CC.CustomerCategoryName
+),
+MaxLosses as (
+
+    select 
+        CustomerCategoryName,
+        max(Loss) as MaxLoss
+    from 
+        CustomerLosses
+    group by 
+        CustomerCategoryName
+)
+select 
+    CL.CustomerCategoryName as CustomerCategoryName,
+    ML.MaxLoss,
+    CL.CustomerName,
+    CL.CustomerID
+from 
+    CustomerLosses CL
+join 
+    MaxLosses ML on CL.CustomerCategoryName = ML.CustomerCategoryName and CL.Loss = ML.MaxLoss
+order by 
+    MaxLoss DESC;
